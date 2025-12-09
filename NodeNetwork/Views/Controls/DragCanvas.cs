@@ -165,8 +165,13 @@ namespace NodeNetwork.Views.Controls
 
         private void ApplyDragToChildren(double deltaX, double deltaY)
         {
-            foreach (UIElement cur in Children)
+            // Cache the children count to avoid repeated property access
+            UIElementCollection children = Children;
+            int count = children.Count;
+            
+            for (int i = 0; i < count; i++)
             {
+                UIElement cur = children[i];
                 double prevLeft = Canvas.GetLeft(cur);
                 if (Double.IsNaN(prevLeft))
                 {
@@ -179,8 +184,8 @@ namespace NodeNetwork.Views.Controls
                     prevTop = 0;
                 }
 
-                Canvas.SetLeft(cur, prevLeft + (deltaX));
-                Canvas.SetTop(cur, prevTop + (deltaY));
+                Canvas.SetLeft(cur, prevLeft + deltaX);
+                Canvas.SetTop(cur, prevTop + deltaY);
             }
 
             _previousDragOffset = new Point(_previousDragOffset.X + deltaX, _previousDragOffset.Y + deltaY);
@@ -362,9 +367,14 @@ namespace NodeNetwork.Views.Controls
 
         private void ApplyZoomToChildren(ZoomEventArgs e)
         {
-            foreach (UIElement cur in this.Children)
+            // Cache the children collection to avoid repeated property access
+            UIElementCollection children = this.Children;
+            int count = children.Count;
+            ScaleTransform transform = e.NewScale;
+            
+            for (int i = 0; i < count; i++)
             {
-                cur.RenderTransform = e.NewScale;
+                children[i].RenderTransform = transform;
             }
         }
         #endregion

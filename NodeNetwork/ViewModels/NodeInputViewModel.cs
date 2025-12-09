@@ -93,16 +93,17 @@ namespace NodeNetwork.ViewModels
             }
 
             PendingConnectionViewModel pendingConnection;
-            if (MaxConnections == 1 && Connections.Items.Any())
+            // Optimize: Use FirstOrDefault instead of Any() + First() to avoid double enumeration
+            var firstConnection = (MaxConnections == 1) ? Connections.Items.FirstOrDefault() : null;
+            if (firstConnection != null)
             {
-	            var conn = Connections.Items.First();
                 pendingConnection = new PendingConnectionViewModel(network)
                 {
-                    Output = conn.Output,
+                    Output = firstConnection.Output,
                     OutputIsLocked = true,
                     LooseEndPoint = Port.CenterPoint
                 };
-                network.Connections.Remove(conn);
+                network.Connections.Remove(firstConnection);
             }
             else if(Connections.Count < MaxConnections)
             {
@@ -177,6 +178,7 @@ namespace NodeNetwork.ViewModels
                             if (MaxConnections == Connections.Count && MaxConnections == 1)
                             {
                                 //Remove the connection to this input
+                                // The condition guarantees exactly 1 connection exists, so First() is safe
                                 network.Connections.Remove(Connections.Items.First());
                             }
 							else if (MaxConnections > 2)

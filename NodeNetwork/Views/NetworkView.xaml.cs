@@ -468,13 +468,15 @@ namespace NodeNetwork.Views
         {
             var selectionRect = ViewModel.SelectionRectangle.Rectangle;
 
+            // Use a list to collect results before clearing and adding to avoid multiple collection changes
             var nodesHit = WPFUtils.FindDescendantsOfType<NodeView>(nodesControl, true)
                     .Where(nodeView =>
                     {
                         //return selectionRect.Contains(new Rect(nodeView.ViewModel.Position, nodeView.RenderSize));
                         return selectionRect.IntersectsWith(new Rect(nodeView.ViewModel.Position, nodeView.RenderSize));
                     })
-                .Select(view => view.ViewModel);
+                .Select(view => view.ViewModel)
+                .ToList(); // Materialize the query once
 
             ViewModel.SelectionRectangle.IntersectingNodes.Clear();
             ViewModel.SelectionRectangle.IntersectingNodes.AddRange(nodesHit);
@@ -514,15 +516,21 @@ namespace NodeNetwork.Views
             bool isCorrectSource = WPFUtils.GetVisualAncestorNLevelsUp((DependencyObject)e.OriginalSource, 6) == nodesControl;
             if (isCorrectSource)
             {
+                // Cache the delta values to avoid repeated property access
+                double deltaX = e.HorizontalChange;
+                double deltaY = e.VerticalChange;
+                
                 foreach (NodeViewModel node in ViewModel.SelectedNodes.Items)
                 {
-                    node.Position = new Point(node.Position.X + e.HorizontalChange, node.Position.Y + e.VerticalChange);
+                    Point pos = node.Position;
+                    node.Position = new Point(pos.X + deltaX, pos.Y + deltaY);
                 }
 
                 if (NodeMove != null)
                 {
                     var args = new NodeMoveEventArgs(ViewModel.SelectedNodes.Items, e);
                     NodeMove(sender, args);
+                }
                 }
             }
         }
@@ -546,10 +554,12 @@ namespace NodeNetwork.Views
 
         private IEnumerable<(ConnectionViewModel con, bool intersects)> FindIntersectingConnections()
         {
+            // Cache the cutline geometry to avoid recreating it for each connection
+            LineGeometry cutLineGeom = new LineGeometry(ViewModel.CutLine.StartPoint, ViewModel.CutLine.EndPoint);
+            
             foreach (ConnectionViewModel con in ViewModel.Connections.Items)
             {
                 PathGeometry conGeom = ConnectionView.BuildSmoothBezier(con.Input.Port.CenterPoint, con.Input.PortPosition, con.Output.Port.CenterPoint, con.Output.PortPosition);
-                LineGeometry cutLineGeom = new LineGeometry(ViewModel.CutLine.StartPoint, ViewModel.CutLine.EndPoint);
                 bool hasIntersections = WPFUtils.GetIntersectionPoints(conGeom, cutLineGeom).Any();
                 yield return (con, hasIntersections);
             }

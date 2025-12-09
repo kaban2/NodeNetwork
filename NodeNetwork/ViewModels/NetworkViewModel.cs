@@ -252,6 +252,7 @@ namespace NodeNetwork.ViewModels
             // When DeleteSelectedNodes is invoked, remove all nodes that are user-removable and selected.
             DeleteSelectedNodes = ReactiveCommand.Create(() =>
             {
+                // ToArray() is necessary to snapshot the collection before RemoveMany modifies it
                 Nodes.RemoveMany(SelectedNodes.Items.Where(n => n.CanBeRemovedByUser).ToArray());
             });
 
@@ -375,7 +376,10 @@ namespace NodeNetwork.ViewModels
         /// </summary>
         public void ClearSelection()
         {
-            foreach (NodeViewModel node in SelectedNodes.Items)
+            // Use a snapshot to avoid modifying the collection while iterating
+            // This is more efficient as SelectedNodes is a filtered collection
+            var selectedNodes = SelectedNodes.Items.ToArray();
+            foreach (NodeViewModel node in selectedNodes)
             {
                 node.IsSelected = false;
             }
