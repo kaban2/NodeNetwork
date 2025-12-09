@@ -94,27 +94,16 @@ namespace NodeNetwork.ViewModels
 
             PendingConnectionViewModel pendingConnection;
             // Optimize: Use FirstOrDefault instead of Any() + First() to avoid double enumeration
-            if (MaxConnections == 1)
+            var firstConnection = (MaxConnections == 1) ? Connections.Items.FirstOrDefault() : null;
+            if (firstConnection != null)
             {
-                var conn = Connections.Items.FirstOrDefault();
-                if (conn != null)
+                pendingConnection = new PendingConnectionViewModel(network)
                 {
-                    pendingConnection = new PendingConnectionViewModel(network)
-                    {
-                        Output = conn.Output,
-                        OutputIsLocked = true,
-                        LooseEndPoint = Port.CenterPoint
-                    };
-                    network.Connections.Remove(conn);
-                }
-                else if (Connections.Count < MaxConnections)
-                {
-                    pendingConnection = new PendingConnectionViewModel(network) { Input = this, InputIsLocked = true, LooseEndPoint = Port.CenterPoint };
-                }
-                else
-                {
-                    return;
-                }
+                    Output = firstConnection.Output,
+                    OutputIsLocked = true,
+                    LooseEndPoint = Port.CenterPoint
+                };
+                network.Connections.Remove(firstConnection);
             }
             else if(Connections.Count < MaxConnections)
             {
@@ -189,12 +178,8 @@ namespace NodeNetwork.ViewModels
                             if (MaxConnections == Connections.Count && MaxConnections == 1)
                             {
                                 //Remove the connection to this input
-                                // Optimize: Since we know there's exactly 1 connection, FirstOrDefault is safe
-                                var existingConn = Connections.Items.FirstOrDefault();
-                                if (existingConn != null)
-                                {
-                                    network.Connections.Remove(existingConn);
-                                }
+                                // The condition guarantees exactly 1 connection exists, so First() is safe
+                                network.Connections.Remove(Connections.Items.First());
                             }
 							else if (MaxConnections > 2)
                             {
