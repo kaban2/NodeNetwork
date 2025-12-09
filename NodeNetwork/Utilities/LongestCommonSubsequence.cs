@@ -85,9 +85,13 @@ namespace NodeNetwork.Utilities
         private static int[,] CalculateLCSMatrix<T>(IList<T> seq1, IList<T> seq2)
         {
             int[,] matrix = new int[seq1.Count + 1, seq2.Count + 1];
-            for (int i = 1; i < matrix.GetLength(0); i++)
+            // Cache array dimensions to avoid repeated calls to GetLength
+            int rows = seq1.Count + 1;
+            int cols = seq2.Count + 1;
+            
+            for (int i = 1; i < rows; i++)
             {
-                for (int j = 1; j < matrix.GetLength(1); j++)
+                for (int j = 1; j < cols; j++)
                 {
                     if (seq1[i - 1].Equals(seq2[j - 1]))
                     {
